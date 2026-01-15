@@ -1,0 +1,19 @@
+{
+    "name": "3dc-ml-demos",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "cd cv-playground && npm run dev",
+        "build": "cd cv-playground && npm run build",
+        "start": "cd cv-playground && npm run start",
+        "lint": "cd cv-playground && npm run lint",
+        "install-all": "cd cv-playground && npm install"
+    },
+    "description": "3DC Open House ML Demos Project - CV Playground with MediaPipe",
+    "keywords": [
+        "computer-vision",
+        "mediapipe",
+        "nextjs",
+        "ml-demos"
+    ]
+}

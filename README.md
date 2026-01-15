@@ -2,10 +2,6 @@
 
 Real-time computer vision powered by MediaPipe - Experience face detection, hand gesture recognition, and body pose detection directly in your browser.
 
-![CV Playground Demo](https://img.shields.io/badge/MediaPipe-Powered-00D4FF?style=for-the-badge&logo=google&logoColor=white)
-![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-
 ## 🚀 Features
 
 - **🔴 Clown Nose Filter** - Real-time face tracking with dynamic nose overlay
@@ -38,18 +34,20 @@ Before running this project, ensure you have:
 1. **Clone the repository**
    ```bash
    git clone <your-repo-url>
-   cd "3DC Open House ML Project/cv-playground"
+   cd "3DC Open House ML Project"
    ```
 
 2. **Install dependencies**
    ```bash
-   npm install
+   npm run install-all
    ```
 
 3. **Run the development server**
    ```bash
    npm run dev
    ```
+   
+   > **Note for Windows PowerShell users**: If you encounter a script execution error, see [fix-powershell.md](fix-powershell.md) for solutions. We recommend using Command Prompt (CMD) instead.
 
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
@@ -236,8 +234,4 @@ For questions, suggestions, or issues, please open an issue on GitHub.
 
 ---
 
-**Built with ❤️ using Next.js, MediaPipe & WebGL**
-
-*All processing happens in your browser - your privacy is protected!*
-#   3 D C - M L - D e m o s - P r o j e c t  
- 
+**Built using Next.js, MediaPipe & WebGL**
