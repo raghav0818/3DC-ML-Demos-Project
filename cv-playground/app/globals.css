@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --cyber-blue: #0B3D91;
+  --neon-cyan: #00FFFF;
+  --neon-pink: #FF00FF;
+}
+
+body {
+  @apply bg-slate-900 text-white;
+}
+
+/* Cyberpunk glow effect */
+.neon-glow {
+  text-shadow: 0 0 10px var(--neon-cyan),
+               0 0 20px var(--neon-cyan),
+               0 0 30px var(--neon-cyan);
+}
+
+.border-glow {
+  box-shadow: 0 0 10px var(--neon-cyan),
+              0 0 20px var(--neon-cyan),
+              inset 0 0 10px var(--neon-cyan);
+}
+
+/* Code view styling */
+.code-block {
+  @apply bg-slate-800 rounded-lg p-4 font-mono text-sm;
+}
+
+/* Button hover effects */
+.cyber-button {
+  @apply transition-all duration-300 hover:scale-105 hover:shadow-lg;
+}
