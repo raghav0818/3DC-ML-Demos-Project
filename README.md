@@ -2,6 +2,24 @@
 
 Real-time computer vision powered by MediaPipe - Experience face detection, hand gesture recognition, and body pose detection directly in your browser.
 
+## ⚡ Quick Start
+
+**Just downloaded from GitHub?** Run these commands:
+```bash
+# Navigate to the INNER folder (note the double folder name!)
+cd Downloads\3DC-ML-Demos-Project-main\3DC-ML-Demos-Project-main
+
+# Install dependencies (takes ~2-3 minutes)
+npm run install-all
+
+# Start the app
+npm run dev
+```
+Then open [http://localhost:3000](http://localhost:3000) in your browser. 🚀
+
+> **💡 Tip**: Use **Command Prompt (CMD)** on Windows, not PowerShell, to avoid script execution errors.
+
+
 ## 🚀 Features
 
 - **🔴 Clown Nose Filter** - Real-time face tracking with dynamic nose overlay
@@ -31,28 +49,51 @@ Before running this project, ensure you have:
 
 ## 🔧 Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd "3DC Open House ML Project"
-   ```
+### Option 1: Clone with Git
+```bash
+git clone https://github.com/raghav0818/3DC-ML-Demos-Project.git
+cd 3DC-ML-Demos-Project
+npm run install-all
+npm run dev
+```
 
-2. **Install dependencies**
+### Option 2: Download ZIP from GitHub
+
+> **⚠️ IMPORTANT**: When you download as ZIP from GitHub, the folder structure is nested!
+
+1. **Download and extract** the ZIP file from GitHub
+2. **Navigate to the correct directory**:
+   ```bash
+   cd Downloads\3DC-ML-Demos-Project-main\3DC-ML-Demos-Project-main
+   ```
+   ⚠️ Notice the **double nested folder** - this is how GitHub structures downloaded ZIPs!
+
+3. **Install dependencies** (this will take a few minutes):
    ```bash
    npm run install-all
    ```
 
-3. **Run the development server**
+4. **Run the development server**:
    ```bash
    npm run dev
    ```
-   
-   > **Note for Windows PowerShell users**: If you encounter a script execution error, see [fix-powershell.md](fix-powershell.md) for solutions. We recommend using Command Prompt (CMD) instead.
 
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+5. **Open your browser** and navigate to [http://localhost:3000](http://localhost:3000)
 
-5. **Allow webcam access** when prompted by your browser
+6. **Allow webcam access** when prompted by your browser
+
+### Troubleshooting Installation
+
+**Error: "Missing script: dev"**
+- You're in the wrong directory! Make sure you're in the **inner** folder (the one that contains `package.json`)
+- Check: run `dir` (Windows) or `ls` and verify you see `package.json` and `cv-playground` folder
+
+**Error: "The system cannot find the path specified"**
+- Dependencies not installed yet! Run `npm run install-all` first
+
+**PowerShell script execution error**
+- Use **Command Prompt (CMD)** instead of PowerShell
+- Or run: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` in PowerShell first
 
 ## 📖 Usage
 
