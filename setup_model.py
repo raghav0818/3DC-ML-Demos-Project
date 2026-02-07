@@ -9,6 +9,7 @@ public model storage into the 'assets/' directory.
 """
 
 import os
+import ssl
 import urllib.request
 import sys
 
@@ -16,7 +17,7 @@ import sys
 # It's the same model that powers Google Meet background blur.
 MODEL_URL = (
     "https://storage.googleapis.com/mediapipe-models/"
-    "image_segmenter/selfie_segmenter_landscape/float32/latest/"
+    "image_segmenter/selfie_segmenter_landscape/float16/latest/"
     "selfie_segmenter_landscape.tflite"
 )
 MODEL_DIR = "assets"
@@ -37,11 +38,28 @@ def download_model():
     print(f"  Destination: {model_path}")
 
     try:
-        urllib.request.urlretrieve(MODEL_URL, model_path, _progress_hook)
+        # Try default SSL first, fall back to unverified context if certs
+        # are missing (common on fresh Windows Python installs).
+        try:
+            urllib.request.urlretrieve(MODEL_URL, model_path, _progress_hook)
+        except (ssl.SSLCertVerificationError, urllib.error.URLError):
+            print("\n  SSL certificate issue — retrying without verification...")
+            ctx = ssl.create_default_context()
+            ctx.check_hostname = False
+            ctx.verify_mode = ssl.CERT_NONE
+            opener = urllib.request.build_opener(
+                urllib.request.HTTPSHandler(context=ctx)
+            )
+            urllib.request.install_opener(opener)
+            urllib.request.urlretrieve(MODEL_URL, model_path, _progress_hook)
+
         size = os.path.getsize(model_path)
         print(f"\n[OK] Download complete! ({size:,} bytes)")
         return model_path
     except Exception as e:
+        # Clean up partial download
+        if os.path.exists(model_path):
+            os.remove(model_path)
         print(f"\n[ERROR] Download failed: {e}")
         print()
         print("Please download the model manually:")
