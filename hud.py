@@ -168,6 +168,16 @@ class HUD:
         # ── Mini leaderboard (bottom right, top 3 only) ──
         self._render_leaderboard_mini(surface, leaderboard_scores)
 
+        # ── Gameplay instruction (first few seconds) ──
+        T = game_state.survival_time
+        if T < 8.0:
+            inst_alpha = 255 if T < 5.0 else int(255 * (1.0 - (T - 5.0) / 3.0))
+            self._draw_text_centered(
+                surface, "MOVE TO THE GREEN ZONES",
+                self.font_medium, (0, 255, 100),
+                y=self.height - 55, alpha=inst_alpha
+            )
+
         # ── Hit flash overlay ──
         if game_state.state == State.HIT:
             flash_progress = game_state.time_in_state / cfg.HIT_FLASH_DURATION

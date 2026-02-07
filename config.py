@@ -54,35 +54,32 @@ COLOR_TIER_INSANE = (213, 0, 0)        # Red
 
 # ─── Difficulty Curve ──────────────────────────────────────────────
 # All values are functions of T (survival time in seconds).
-# beam_speed = BASE_SPEED + (T / 60) * SPEED_RAMP, capped at MAX_SPEED
-BEAM_BASE_SPEED = 4.0
-BEAM_SPEED_RAMP = 6.0         # Additional speed gained over 60 seconds
-BEAM_MAX_SPEED = 14.0
-
 # spawn_interval = max(MIN_INTERVAL, BASE_INTERVAL - T * INTERVAL_DECAY)
-SPAWN_BASE_INTERVAL = 3.0     # Seconds between beams at T=0
-SPAWN_MIN_INTERVAL = 0.8      # Fastest spawn rate
-SPAWN_INTERVAL_DECAY = 0.0183 # Rate of interval decrease per second
+SPAWN_BASE_INTERVAL = 3.5     # Seconds between beams at T=0
+SPAWN_MIN_INTERVAL = 1.2      # Fastest spawn rate
+SPAWN_INTERVAL_DECAY = 0.015  # Rate of interval decrease per second
 
 # gap_size = max(MIN_GAP, BASE_GAP - T * GAP_SHRINK)
 # Expressed as fraction of screen dimension (0.0 to 1.0)
 GAP_BASE_SIZE = 0.40
-GAP_MIN_SIZE = 0.15
+GAP_MIN_SIZE = 0.18
 GAP_SHRINK_RATE = 0.002
 
 # warning_time = max(MIN_WARNING, BASE_WARNING - T * WARNING_DECAY)
-WARNING_BASE_MS = 1200         # Milliseconds of warning at T=0
-WARNING_MIN_MS = 300
+# During warning the beam position and safe gap are previewed on screen.
+WARNING_BASE_MS = 1500         # Milliseconds of warning at T=0
+WARNING_MIN_MS = 500
 WARNING_DECAY = 7.5            # ms reduction per second of survival
+
+# beam_active = max(MIN_ACTIVE, BASE_ACTIVE - T * ACTIVE_DECAY)
+# How long the beam stays on screen (dangerous) after the warning ends.
+BEAM_ACTIVE_BASE = 1.8        # Seconds at T=0
+BEAM_ACTIVE_MIN = 0.7         # Minimum active duration
+BEAM_ACTIVE_DECAY = 0.008     # Seconds lost per second of survival
 
 # Beam type unlock times (seconds of survival)
 UNLOCK_VERTICAL = 15.0
 UNLOCK_CROSS = 30.0
-UNLOCK_SWEEP = 45.0
-
-# Sweep beam specific
-SWEEP_BEAM_WIDTH = 12          # Pixels (thinner than regular beams)
-SWEEP_SPEED_MULTIPLIER = 0.3   # Fraction of normal beam speed (slower)
 
 # ─── Beam Rendering ───────────────────────────────────────────────
 BEAM_CORE_WIDTH = 24           # Core beam width in pixels

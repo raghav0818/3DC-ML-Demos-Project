@@ -301,10 +301,10 @@ def main():
 def _scale_and_flip(game_surface, display):
     """
     Scale the internal-resolution game surface up to the display
-    resolution and present it.  Uses pygame.transform.scale which
-    is hardware-accelerated on most systems.
+    resolution and present it.  Uses smoothscale for bilinear
+    filtering so the upscaled image isn't blocky/grainy.
     """
-    scaled = pygame.transform.scale(
+    scaled = pygame.transform.smoothscale(
         game_surface,
         display.get_size(),
     )
