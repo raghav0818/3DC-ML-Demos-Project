@@ -1,0 +1,20 @@
+
+============================================================
+Crash at 2026-02-07 17:13:19.222118
+Traceback (most recent call last):
+  File "C:\Users\raghav\Downloads\dodge_the_lasers\dodge_the_lasers\main.py", line 453, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\raghav\Downloads\dodge_the_lasers\dodge_the_lasers\main.py", line 78, in main
+    camera = Camera()
+  File "C:\Users\raghav\Downloads\dodge_the_lasers\dodge_the_lasers\camera.py", line 58, in __init__
+    self._init_tasks_api()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\raghav\Downloads\dodge_the_lasers\dodge_the_lasers\camera.py", line 87, in _init_tasks_api
+    raise FileNotFoundError(
+    ...<2 lines>...
+    )
+FileNotFoundError: 
+[ERROR] Model file not found at 'assets\selfie_segmenter_landscape.tflite'.
+Please run 'python setup_model.py' first to download it.
+
