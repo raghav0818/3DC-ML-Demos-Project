@@ -54,13 +54,20 @@ def main():
     # logic and collision detection at a fixed, predictable resolution.
 
     if cfg.FULLSCREEN:
+        # Use the native monitor resolution so the game fills the screen
+        # regardless of the user's display (1080p, 1440p, 4K, etc.).
+        screen_info = pygame.display.Info()
+        display_w = screen_info.current_w
+        display_h = screen_info.current_h
         display = pygame.display.set_mode(
-            (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+            (display_w, display_h),
             pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF,
         )
     else:
+        display_w = cfg.DISPLAY_WIDTH
+        display_h = cfg.DISPLAY_HEIGHT
         display = pygame.display.set_mode(
-            (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+            (display_w, display_h),
             pygame.HWSURFACE | pygame.DOUBLEBUF,
         )
 
@@ -299,7 +306,7 @@ def _scale_and_flip(game_surface, display):
     """
     scaled = pygame.transform.scale(
         game_surface,
-        (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+        display.get_size(),
     )
     display.blit(scaled, (0, 0))
     pygame.display.flip()
