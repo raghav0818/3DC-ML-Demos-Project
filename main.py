@@ -167,6 +167,16 @@ def main():
         body_mask, body_detected = camera.get_body_mask()
         collision_mask = camera.get_collision_mask()
 
+        # ── Compute body centroid for anti-camping ──
+        if body_detected:
+            ys_b, xs_b = np.where(body_mask > 0)
+            if len(xs_b) > 0:
+                game_state.update_centroid(int(np.mean(xs_b)), int(np.mean(ys_b)))
+            else:
+                game_state.update_centroid(None, None)
+        else:
+            game_state.update_centroid(None, None)
+
         # ────────────────────────────────────────────────────────
         # STEP 2: Update game state machine
         # ────────────────────────────────────────────────────────
@@ -207,6 +217,11 @@ def main():
         # ────────────────────────────────────────────────────────
         if game_state.state in (State.PLAYING, State.HIT):
             laser_mgr.update(dt, game_state.survival_time)
+
+            # Anti-camping: fire targeted laser if camper didn't move
+            camp_target = game_state.consume_camp_laser()
+            if camp_target is not None:
+                laser_mgr.spawn_anti_camp_laser(camp_target, game_state.survival_time)
 
         # ────────────────────────────────────────────────────────
         # STEP 5: Collision detection
@@ -257,6 +272,12 @@ def main():
             body_surface = player_renderer.render_body(body_mask, time_now=now)
             body_surface.set_alpha(80)
             game_surface.blit(body_surface, (0, 0))
+
+        # 7c2. Draw anti-camping reticle (on top of lasers, below body)
+        if game_state.camp_warning_active and game_state.state in (State.PLAYING, State.HIT):
+            hud.render_camp_warning(game_surface,
+                                    game_state.camp_target_x,
+                                    game_state.camp_target_y)
 
         # 7d. Draw particles (on top of everything except HUD)
         particles.render(game_surface)

@@ -314,6 +314,48 @@ class HUD:
     # Body-lost hint
     # ────────────────────────────────────────────────────────────
 
+    # ────────────────────────────────────────────────────────────
+    # Anti-camping reticle
+    # ────────────────────────────────────────────────────────────
+
+    def render_camp_warning(self, surface, target_x, target_y):
+        """Draw a targeting reticle + 'MOVE!' on the camper's position."""
+        now = time.time()
+        pulse = abs(math.sin(now * 6))
+        alpha = int(150 + pulse * 105)
+        color = (255, 0, 0, alpha)
+
+        reticle_surf = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
+        size = 30
+        thickness = 2
+        # Crosshair lines
+        pygame.draw.line(reticle_surf, color,
+                         (target_x - size, target_y),
+                         (target_x + size, target_y), thickness)
+        pygame.draw.line(reticle_surf, color,
+                         (target_x, target_y - size),
+                         (target_x, target_y + size), thickness)
+        # Outer circle
+        pygame.draw.circle(reticle_surf, color, (target_x, target_y),
+                           size, thickness)
+        # Inner circle
+        pygame.draw.circle(reticle_surf, color, (target_x, target_y),
+                           size // 2, thickness)
+
+        surface.blit(reticle_surf, (0, 0))
+
+        # "MOVE!" text above the reticle
+        self._draw_text_centered(
+            surface, "MOVE!",
+            self.font_medium, (255, 0, 0),
+            y=max(0, target_y - 55), alpha=alpha
+        )
+
+    # ────────────────────────────────────────────────────────────
+    # Body-lost hint
+    # ────────────────────────────────────────────────────────────
+
     def render_body_lost_hint(self, surface):
         """Shown when body tracking is lost during gameplay."""
         self._draw_text_centered(

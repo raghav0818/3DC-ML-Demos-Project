@@ -38,6 +38,10 @@ COLOR_LASER_VERTICAL = (255, 0, 110)    # Hot magenta
 COLOR_LASER_CROSS_H = (0, 212, 255)     # Cyan (horizontal part)
 COLOR_LASER_CROSS_V = (255, 0, 110)     # Magenta (vertical part)
 COLOR_LASER_SWEEP = (255, 214, 0)       # Gold
+COLOR_LASER_ANKLE_BREAKER = (255, 100, 0)   # Orange (lava)
+COLOR_LASER_ANKLE_BRIGHT = (255, 200, 50)   # Bright lava highlights
+COLOR_LASER_HEAD_HUNTER = (170, 0, 255)     # Purple
+COLOR_LASER_ANTI_CAMP = (255, 30, 30)       # Bright red
 COLOR_HIT_FLASH = (255, 0, 0)           # Red
 COLOR_HUD_TEXT = (255, 255, 255)        # White
 COLOR_HUD_SHADOW = (0, 0, 0)           # Black shadow behind text
@@ -78,8 +82,23 @@ BEAM_ACTIVE_MIN = 0.7         # Minimum active duration
 BEAM_ACTIVE_DECAY = 0.008     # Seconds lost per second of survival
 
 # Beam type unlock times (seconds of survival)
+UNLOCK_ANKLE_BREAKER = 10.0   # Forces jumping early on
 UNLOCK_VERTICAL = 15.0
+UNLOCK_HEAD_HUNTER = 25.0     # Forces ducking
 UNLOCK_CROSS = 30.0
+
+# ─── Ankle Breaker (jump beam) ────────────────────────────────────
+ANKLE_BREAKER_HEIGHT = 0.15   # Fraction of screen from bottom (solid, no gap)
+
+# ─── Head Hunter (duck beam) ─────────────────────────────────────
+HEAD_HUNTER_HEIGHT = 0.40     # Fraction of screen from top (solid, no gap)
+
+# ─── Anti-Camping ────────────────────────────────────────────────
+CAMPING_THRESHOLD = 25        # Pixel movement to reset camp timer
+CAMPING_TIME = 3.0            # Seconds stationary before warning reticle appears
+CAMPING_WARNING_TIME = 2.0    # Seconds of warning before anti-camp laser fires
+ANTI_CAMP_WARNING_MS = 500    # Short beam warning (player already sees reticle)
+ANTI_CAMP_ACTIVE_DURATION = 1.5  # How long the anti-camp beam stays active
 
 # ─── Beam Rendering ───────────────────────────────────────────────
 BEAM_CORE_WIDTH = 24           # Core beam width in pixels
