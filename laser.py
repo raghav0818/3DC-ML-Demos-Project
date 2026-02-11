@@ -8,9 +8,8 @@ Each beam goes through two phases:
 
 Beam types:
   - Horizontal (cyan): full-width line at a fixed Y, gap along X axis
-  - Vertical (magenta): full-height line at a fixed X, gap along Y axis
+  - Vertical (magenta): full-height solid line at a fixed X — no gap
   - Cross: simultaneous horizontal + vertical beams
-  - Ankle Breaker (orange): solid zone covering bottom 15% — forces jumping
   - Head Hunter (purple): solid zone covering top 40% — forces ducking
   - Anti-Camp (red): targeted vertical beam at the camper's X — no gap
 
@@ -20,7 +19,6 @@ the formulas in config.py.
 
 import random
 import math
-import time as _time
 import numpy as np
 import pygame
 
@@ -58,8 +56,6 @@ def get_active_duration(T):
 def get_available_types(T):
     """Return list of (beam_type, weight) tuples unlocked at time T."""
     types = [("horizontal", 3)]
-    if T >= cfg.UNLOCK_ANKLE_BREAKER:
-        types.append(("ankle_breaker", 1))
     if T >= cfg.UNLOCK_VERTICAL:
         types.append(("vertical", 3))
     if T >= cfg.UNLOCK_HEAD_HUNTER:
@@ -80,7 +76,7 @@ COLOR_SAFE_ZONE = (0, 255, 100)
 class Laser:
     """
     A laser beam at a fixed position with a dodgeable gap (or a solid
-    zone for ankle_breaker / head_hunter / anti_camp).
+    zone for head_hunter / anti_camp).
 
     Lifecycle:
       1. WARNING phase — faint beam preview + highlighted safe gap / action hint
@@ -107,11 +103,9 @@ class Laser:
         if beam_type == "horizontal":
             self._setup_horizontal(gap_frac)
         elif beam_type == "vertical":
-            self._setup_vertical(gap_frac)
+            self._setup_vertical()
         elif beam_type == "cross":
             self._setup_cross(gap_frac)
-        elif beam_type == "ankle_breaker":
-            self._setup_ankle_breaker()
         elif beam_type == "head_hunter":
             self._setup_head_hunter()
         elif beam_type == "anti_camp":
@@ -133,15 +127,13 @@ class Laser:
         self.gap_center_x = random.randint(gap_margin, self.screen_w - gap_margin)
         self.gap_size = gap_w
 
-    def _setup_vertical(self, gap_frac):
-        """Full-height beam at a fixed X, gap along Y axis."""
+    def _setup_vertical(self):
+        """Full-height solid beam at a fixed X — no gap, must dodge entirely."""
         self.color = cfg.COLOR_LASER_VERTICAL
         margin = 60
         self.x_pos = random.randint(margin, self.screen_w - margin)
-        gap_h = int(self.screen_h * gap_frac)
-        gap_margin = gap_h // 2 + 20
-        self.gap_center_y = random.randint(gap_margin, self.screen_h - gap_margin)
-        self.gap_size = gap_h
+        self.gap_center_y = self.screen_h // 2  # unused, kept for compatibility
+        self.gap_size = 0  # no gap — solid beam
 
     def _setup_cross(self, gap_frac):
         """Simultaneous horizontal + vertical beams."""
@@ -162,11 +154,6 @@ class Laser:
         self.h_gap_size = gap_w
         self.v_gap_center_y = random.randint(gap_margin_h, self.screen_h - gap_margin_h)
         self.v_gap_size = gap_h
-
-    def _setup_ankle_breaker(self):
-        """Solid zone covering bottom 15% of screen — no gap, must jump."""
-        self.color = cfg.COLOR_LASER_ANKLE_BREAKER
-        self._zone_y_top = int(self.screen_h * (1.0 - cfg.ANKLE_BREAKER_HEIGHT))
 
     def _setup_head_hunter(self):
         """Solid zone covering top 40% of screen — no gap, must duck."""
@@ -220,8 +207,6 @@ class Laser:
         elif self.beam_type == "cross":
             self._fill_h_mask(mask, self.y_pos, self.h_gap_center_x, self.h_gap_size)
             self._fill_v_mask(mask, self.x_pos, self.v_gap_center_y, self.v_gap_size)
-        elif self.beam_type == "ankle_breaker":
-            mask[self._zone_y_top:, :] = 255
         elif self.beam_type == "head_hunter":
             mask[:self._zone_y_bot, :] = 255
         elif self.beam_type == "anti_camp":
@@ -291,8 +276,6 @@ class Laser:
                                    self.h_gap_center_x, self.h_gap_size, self.color_h)
             self._render_warning_v(surface, pulse, self.x_pos,
                                    self.v_gap_center_y, self.v_gap_size, self.color_v)
-        elif self.beam_type == "ankle_breaker":
-            self._render_warning_ankle(surface, pulse)
         elif self.beam_type == "head_hunter":
             self._render_warning_head(surface, pulse)
         elif self.beam_type == "anti_camp":
@@ -390,35 +373,6 @@ class Laser:
 
         surface.blit(warn_surf, (0, 0))
 
-    def _render_warning_ankle(self, surface, pulse):
-        """Warning for ankle breaker: pulsing orange zone + upward arrows."""
-        w = surface.get_width()
-        y_top = self._zone_y_top
-        zone_h = self.screen_h - y_top
-
-        warn_surf = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-
-        # Faint orange danger zone
-        zone_alpha = int(pulse * 50)
-        pygame.draw.rect(warn_surf, (*self.color, zone_alpha),
-                         (0, y_top, w, zone_h))
-
-        # Upward arrows along the top edge — "jump up!"
-        arrow_alpha = int(pulse * 220)
-        arrow_color = (*COLOR_SAFE_ZONE, arrow_alpha)
-        arrow_count = 8
-        arrow_size = 10
-        for i in range(arrow_count):
-            cx = int(w * (i + 0.5) / arrow_count)
-            tip_y = y_top - 15
-            points = [
-                (cx, tip_y),
-                (cx - arrow_size, tip_y + arrow_size + 4),
-                (cx + arrow_size, tip_y + arrow_size + 4),
-            ]
-            pygame.draw.polygon(warn_surf, arrow_color, points)
-
-        surface.blit(warn_surf, (0, 0))
 
     def _render_warning_head(self, surface, pulse):
         """Warning for head hunter: pulsing purple zone + downward arrows."""
@@ -485,52 +439,11 @@ class Laser:
                                 self.h_gap_size, self.color_h, alpha_mult)
             self._render_v_beam(surface, self.x_pos, self.v_gap_center_y,
                                 self.v_gap_size, self.color_v, alpha_mult)
-        elif self.beam_type == "ankle_breaker":
-            self._render_active_ankle(surface, alpha_mult)
         elif self.beam_type == "head_hunter":
             self._render_active_head(surface, alpha_mult)
         elif self.beam_type == "anti_camp":
             self._render_active_anticamp(surface, alpha_mult)
 
-    def _render_active_ankle(self, surface, alpha_mult):
-        """Render ankle breaker: solid lava zone with animated bubbles."""
-        w = surface.get_width()
-        y_top = self._zone_y_top
-        zone_h = self.screen_h - y_top
-        now = _time.time()
-
-        glow_surf = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-
-        # Main lava zone
-        core_alpha = int(180 * alpha_mult)
-        pygame.draw.rect(glow_surf, (*self.color, core_alpha),
-                         (0, y_top, w, zone_h))
-
-        # Brighter core at very bottom
-        bright_alpha = int(200 * alpha_mult)
-        bottom_h = zone_h // 3
-        pygame.draw.rect(glow_surf, (*cfg.COLOR_LASER_ANKLE_BRIGHT, bright_alpha),
-                         (0, self.screen_h - bottom_h, w, bottom_h))
-
-        # Animated bubbles along the top edge
-        bubble_count = 20
-        for i in range(bubble_count):
-            bx = int(w * (i + 0.5) / bubble_count)
-            phase = i * 1.7 + now * (2.0 + (i % 3) * 0.5)
-            by_offset = math.sin(phase) * 10 + math.cos(phase * 0.7) * 5
-            by = int(y_top + by_offset)
-            radius = int(4 + math.sin(phase * 1.3) * 2)
-            bubble_alpha = int((100 + math.sin(phase) * 50) * alpha_mult)
-            pygame.draw.circle(glow_surf, (*self.color, bubble_alpha),
-                               (bx, by), max(1, radius))
-
-        # Glow above the lava line
-        glow_h = 20
-        glow_alpha = int(cfg.BEAM_OUTER_ALPHA * 255 * alpha_mult)
-        pygame.draw.rect(glow_surf, (*self.color, glow_alpha),
-                         (0, y_top - glow_h, w, glow_h))
-
-        surface.blit(glow_surf, (0, 0))
 
     def _render_active_head(self, surface, alpha_mult):
         """Render head hunter: solid purple zone with glow at bottom edge."""
@@ -674,6 +587,7 @@ class Laser:
         surface.blit(glow_surf, (0, 0))
 
 
+
 # ────────────────────────────────────────────────────────────
 # Laser Manager
 # ────────────────────────────────────────────────────────────
@@ -715,13 +629,78 @@ class LaserManager:
                        if laser.update(dt) and laser.alive]
 
     def _spawn_laser(self, T):
-        """Spawn a random laser based on current difficulty (weighted)."""
+        """Spawn a random laser, retrying if it's too close to active ones."""
         available = get_available_types(T)
         types = [t for t, _w in available]
         weights = [w for _t, w in available]
         beam_type = random.choices(types, weights=weights, k=1)[0]
-        laser = Laser(beam_type, T, self.screen_w, self.screen_h)
-        self.lasers.append(laser)
+
+        # Try up to 10 times to find a position with enough spacing
+        best_laser = None
+        best_min_dist = -1
+        for _ in range(10):
+            laser = Laser(beam_type, T, self.screen_w, self.screen_h)
+            min_dist = self._min_distance_to_active(laser)
+            if min_dist >= cfg.LASER_MIN_SPACING:
+                self.lasers.append(laser)
+                return
+            if min_dist > best_min_dist:
+                best_laser = laser
+                best_min_dist = min_dist
+
+        # Use the best attempt if none met the threshold
+        self.lasers.append(best_laser)
+
+    def _get_laser_pos(self, laser):
+        """Get primary position(s) of a laser for spacing checks."""
+        if laser.beam_type == "horizontal":
+            return ("y", getattr(laser, "y_pos", None))
+        elif laser.beam_type in ("vertical", "anti_camp"):
+            return ("x", getattr(laser, "x_pos", None))
+        elif laser.beam_type == "cross":
+            return ("xy", getattr(laser, "y_pos", None),
+                    getattr(laser, "x_pos", None))
+        elif laser.beam_type == "head_hunter":
+            return ("y", getattr(laser, "_zone_y_bot", None))
+        return ("none", None)
+
+    def _min_distance_to_active(self, new_laser):
+        """Return the minimum distance from new_laser to any active laser."""
+        if not self.lasers:
+            return float("inf")
+
+        new_pos = self._get_laser_pos(new_laser)
+        min_dist = float("inf")
+
+        for existing in self.lasers:
+            if not existing.alive:
+                continue
+            ex_pos = self._get_laser_pos(existing)
+
+            dist = self._pos_distance(new_pos, ex_pos)
+            if dist < min_dist:
+                min_dist = dist
+
+        return min_dist
+
+    @staticmethod
+    def _pos_distance(pos_a, pos_b):
+        """Compute distance between two laser positions."""
+        # Same axis type — straightforward distance
+        if pos_a[0] == pos_b[0] == "y":
+            if pos_a[1] is not None and pos_b[1] is not None:
+                return abs(pos_a[1] - pos_b[1])
+        elif pos_a[0] == pos_b[0] == "x":
+            if pos_a[1] is not None and pos_b[1] is not None:
+                return abs(pos_a[1] - pos_b[1])
+        elif pos_a[0] == pos_b[0] == "xy":
+            if all(v is not None for v in pos_a[1:] + pos_b[1:]):
+                dy = abs(pos_a[1] - pos_b[1])
+                dx = abs(pos_a[2] - pos_b[2])
+                return min(dx, dy)
+
+        # Different axis types can't overlap — treat as far apart
+        return float("inf")
 
     def spawn_anti_camp_laser(self, target_x, T):
         """Spawn a targeted anti-camp beam at the camper's X position."""

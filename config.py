@@ -38,8 +38,6 @@ COLOR_LASER_VERTICAL = (255, 0, 110)    # Hot magenta
 COLOR_LASER_CROSS_H = (0, 212, 255)     # Cyan (horizontal part)
 COLOR_LASER_CROSS_V = (255, 0, 110)     # Magenta (vertical part)
 COLOR_LASER_SWEEP = (255, 214, 0)       # Gold
-COLOR_LASER_ANKLE_BREAKER = (255, 100, 0)   # Orange (lava)
-COLOR_LASER_ANKLE_BRIGHT = (255, 200, 50)   # Bright lava highlights
 COLOR_LASER_HEAD_HUNTER = (170, 0, 255)     # Purple
 COLOR_LASER_ANTI_CAMP = (255, 30, 30)       # Bright red
 COLOR_HIT_FLASH = (255, 0, 0)           # Red
@@ -59,20 +57,24 @@ COLOR_TIER_INSANE = (213, 0, 0)        # Red
 # ─── Difficulty Curve ──────────────────────────────────────────────
 # All values are functions of T (survival time in seconds).
 # spawn_interval = max(MIN_INTERVAL, BASE_INTERVAL - T * INTERVAL_DECAY)
-SPAWN_BASE_INTERVAL = 3.5     # Seconds between beams at T=0
-SPAWN_MIN_INTERVAL = 1.2      # Fastest spawn rate
-SPAWN_INTERVAL_DECAY = 0.015  # Rate of interval decrease per second
+SPAWN_BASE_INTERVAL = 2.5     # Seconds between beams at T=0
+SPAWN_MIN_INTERVAL = 0.8      # Fastest spawn rate
+SPAWN_INTERVAL_DECAY = 0.02   # Rate of interval decrease per second
 
 # gap_size = max(MIN_GAP, BASE_GAP - T * GAP_SHRINK)
 # Expressed as fraction of screen dimension (0.0 to 1.0)
-GAP_BASE_SIZE = 0.40
-GAP_MIN_SIZE = 0.18
+GAP_BASE_SIZE = 0.45
+GAP_MIN_SIZE = 0.25
 GAP_SHRINK_RATE = 0.002
+
+# Minimum pixel distance between consecutive laser positions.
+# Prevents lasers from stacking on top of each other.
+LASER_MIN_SPACING = 100
 
 # warning_time = max(MIN_WARNING, BASE_WARNING - T * WARNING_DECAY)
 # During warning the beam position and safe gap are previewed on screen.
-WARNING_BASE_MS = 1500         # Milliseconds of warning at T=0
-WARNING_MIN_MS = 500
+WARNING_BASE_MS = 1200         # Milliseconds of warning at T=0
+WARNING_MIN_MS = 400
 WARNING_DECAY = 7.5            # ms reduction per second of survival
 
 # beam_active = max(MIN_ACTIVE, BASE_ACTIVE - T * ACTIVE_DECAY)
@@ -82,21 +84,17 @@ BEAM_ACTIVE_MIN = 0.7         # Minimum active duration
 BEAM_ACTIVE_DECAY = 0.008     # Seconds lost per second of survival
 
 # Beam type unlock times (seconds of survival)
-UNLOCK_ANKLE_BREAKER = 10.0   # Forces jumping early on
-UNLOCK_VERTICAL = 15.0
-UNLOCK_HEAD_HUNTER = 25.0     # Forces ducking
-UNLOCK_CROSS = 30.0
-
-# ─── Ankle Breaker (jump beam) ────────────────────────────────────
-ANKLE_BREAKER_HEIGHT = 0.15   # Fraction of screen from bottom (solid, no gap)
+UNLOCK_VERTICAL = 10.0
+UNLOCK_HEAD_HUNTER = 20.0     # Forces ducking
+UNLOCK_CROSS = 25.0
 
 # ─── Head Hunter (duck beam) ─────────────────────────────────────
 HEAD_HUNTER_HEIGHT = 0.40     # Fraction of screen from top (solid, no gap)
 
 # ─── Anti-Camping ────────────────────────────────────────────────
 CAMPING_THRESHOLD = 25        # Pixel movement to reset camp timer
-CAMPING_TIME = 3.0            # Seconds stationary before warning reticle appears
-CAMPING_WARNING_TIME = 2.0    # Seconds of warning before anti-camp laser fires
+CAMPING_TIME = 2.5            # Seconds stationary before warning reticle appears
+CAMPING_WARNING_TIME = 1.5    # Seconds of warning before anti-camp laser fires
 ANTI_CAMP_WARNING_MS = 500    # Short beam warning (player already sees reticle)
 ANTI_CAMP_ACTIVE_DURATION = 1.5  # How long the anti-camp beam stays active
 
@@ -121,7 +119,7 @@ BODY_GLOW_INTENSITY = 0.6      # Blend weight of glow layer
 COLLISION_ERODE_PX = 5
 
 # ─── Lives & Invincibility ────────────────────────────────────────
-STARTING_LIVES = 3
+STARTING_LIVES = 5
 INVINCIBILITY_DURATION = 1.0   # Seconds of invincibility after a hit
 INVINCIBILITY_FLASH_HZ = 8    # Flash frequency during invincibility
 
