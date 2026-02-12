@@ -9,8 +9,41 @@ try/except so a corrupted file never crashes the application.
 
 import json
 import os
+import threading
+
+import requests
 
 import config as cfg
+
+LEADERBOARD_SERVER_URL = "http://10.168.121.158:3000/leaderboard/update"
+
+
+def send_to_leaderboard_server(player, timing, category):
+    """
+    Send a score update to the central leaderboard server.
+
+    Runs in a background thread so it never blocks the game loop.
+    Silently handles errors — a network failure should never crash the game.
+
+    Args:
+        player:   Player name / identifier.
+        timing:   Survival time in seconds (float).
+        category: Difficulty category string (e.g. "EASY", "HARD").
+    """
+    def _put():
+        try:
+            payload = {
+                "player": player,
+                "timing": timing,
+                "category": category, #laserdodge_easy, laserdodge_medium
+            }
+            resp = requests.put(LEADERBOARD_SERVER_URL, json=payload, timeout=5)
+            print(f"[Leaderboard] Server response: {resp.status_code}")
+        except Exception as e:
+            print(f"[Leaderboard] Could not reach server: {e}")
+
+    thread = threading.Thread(target=_put, daemon=True)
+    thread.start()
 
 
 class Leaderboard:

@@ -36,7 +36,7 @@ from laser import LaserManager
 from particles import ParticleSystem
 from player import PlayerRenderer
 from hud import HUD
-from leaderboard import Leaderboard
+from leaderboard import Leaderboard, send_to_leaderboard_server
 
 
 def main():
@@ -195,23 +195,6 @@ def main():
         if game_state.state == State.PLAYING and prev_state == State.COUNTDOWN:
             _play_sound(sounds, "start")
 
-        # Entering GAME_OVER → submit score, spawn celebration particles
-        if game_state.state == State.GAME_OVER and prev_state in (State.PLAYING, State.HIT):
-            rank, is_highscore = leaderboard.submit(game_state.final_time)
-            game_state.set_game_over_result(rank, is_highscore)
-            _play_sound(sounds, "gameover")
-
-            if is_highscore:
-                _play_sound(sounds, "highscore")
-                # Celebration particles from center of screen
-                particles.emit(
-                    cfg.INTERNAL_WIDTH // 2,
-                    cfg.INTERNAL_HEIGHT // 2,
-                    cfg.PARTICLES_ON_HIGHSCORE,
-                    cfg.COLOR_HIGHSCORE,
-                    speed_min=3.0, speed_max=12.0,
-                )
-
         # ────────────────────────────────────────────────────────
         # STEP 3 & 4: Spawn and update lasers
         # ────────────────────────────────────────────────────────
@@ -240,6 +223,28 @@ def main():
                         cfg.PARTICLES_ON_HIT,
                         hit_color or cfg.COLOR_HIT_FLASH,
                     )
+
+        # ── GAME_OVER transition side-effects ──
+        # Checked here (after collision) so we catch game overs triggered
+        # by both body-lost (in update()) AND collision (in register_hit()).
+        if game_state.state == State.GAME_OVER and prev_state in (State.PLAYING, State.HIT):
+            rank, is_highscore = leaderboard.submit(game_state.final_time)
+            game_state.set_game_over_result(rank, is_highscore)
+            # Send score to the central leaderboard server (non-blocking)
+            tier_name, _ = game_state.difficulty_tier
+            send_to_leaderboard_server("Anonymous", game_state.final_time, tier_name)
+            _play_sound(sounds, "gameover")
+
+            if is_highscore:
+                _play_sound(sounds, "highscore")
+                # Celebration particles from center of screen
+                particles.emit(
+                    cfg.INTERNAL_WIDTH // 2,
+                    cfg.INTERNAL_HEIGHT // 2,
+                    cfg.PARTICLES_ON_HIGHSCORE,
+                    cfg.COLOR_HIGHSCORE,
+                    speed_min=3.0, speed_max=12.0,
+                )
 
         # ────────────────────────────────────────────────────────
         # STEP 6: Update particle systems

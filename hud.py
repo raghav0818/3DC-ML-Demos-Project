@@ -239,6 +239,8 @@ class HUD:
                 y=self.height // 2 + 10
             )
 
+
+
         # New high score celebration text
         if game_state.is_new_highscore:
             pulse = (math.sin(time.time() * 6) + 1) / 2
