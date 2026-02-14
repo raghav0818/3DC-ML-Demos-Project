@@ -153,6 +153,11 @@ def main():
                     game_state.forced_difficulty = None
                     print("[Debug] Difficulty set to auto.")
 
+                elif event.key == pygame.K_RETURN:
+                    # Start the game from the instructions screen
+                    game_state.start_game()
+                    _play_sound(sounds, "beep")
+
         # Don't update anything while paused
         if game_state.state == State.PAUSED:
             game_surface.fill(cfg.COLOR_BACKGROUND)
@@ -186,7 +191,7 @@ def main():
         # ── State transition side-effects ──
 
         # Entering COUNTDOWN → reset lasers and particles
-        if game_state.state == State.COUNTDOWN and prev_state == State.IDLE:
+        if game_state.state == State.COUNTDOWN and prev_state == State.INSTRUCTIONS:
             laser_mgr.reset()
             particles.clear()
             _play_sound(sounds, "beep")
@@ -263,7 +268,7 @@ def main():
             laser_mgr.render(game_surface)
 
         # 7c. Draw the player's neon body silhouette
-        if body_detected and game_state.state in (State.COUNTDOWN, State.PLAYING, State.HIT):
+        if body_detected and game_state.state in (State.INSTRUCTIONS, State.COUNTDOWN, State.PLAYING, State.HIT):
             body_surface = player_renderer.render_body(
                 body_mask,
                 is_invincible=game_state.is_invincible,

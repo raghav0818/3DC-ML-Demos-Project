@@ -57,14 +57,14 @@ COLOR_TIER_INSANE = (213, 0, 0)        # Red
 # ─── Difficulty Curve ──────────────────────────────────────────────
 # All values are functions of T (survival time in seconds).
 # spawn_interval = max(MIN_INTERVAL, BASE_INTERVAL - T * INTERVAL_DECAY)
-SPAWN_BASE_INTERVAL = 2.5     # Seconds between beams at T=0
-SPAWN_MIN_INTERVAL = 0.8      # Fastest spawn rate
-SPAWN_INTERVAL_DECAY = 0.02   # Rate of interval decrease per second
+SPAWN_BASE_INTERVAL = 3.0     # Seconds between beams at T=0
+SPAWN_MIN_INTERVAL = 1.2      # Fastest spawn rate
+SPAWN_INTERVAL_DECAY = 0.015  # Rate of interval decrease per second
 
 # gap_size = max(MIN_GAP, BASE_GAP - T * GAP_SHRINK)
 # Expressed as fraction of screen dimension (0.0 to 1.0)
-GAP_BASE_SIZE = 0.45
-GAP_MIN_SIZE = 0.25
+GAP_BASE_SIZE = 0.50
+GAP_MIN_SIZE = 0.30
 GAP_SHRINK_RATE = 0.002
 
 # Minimum pixel distance between consecutive laser positions.
@@ -73,8 +73,8 @@ LASER_MIN_SPACING = 100
 
 # warning_time = max(MIN_WARNING, BASE_WARNING - T * WARNING_DECAY)
 # During warning the beam position and safe gap are previewed on screen.
-WARNING_BASE_MS = 1200         # Milliseconds of warning at T=0
-WARNING_MIN_MS = 400
+WARNING_BASE_MS = 1500         # Milliseconds of warning at T=0
+WARNING_MIN_MS = 600
 WARNING_DECAY = 7.5            # ms reduction per second of survival
 
 # beam_active = max(MIN_ACTIVE, BASE_ACTIVE - T * ACTIVE_DECAY)
@@ -84,9 +84,9 @@ BEAM_ACTIVE_MIN = 0.7         # Minimum active duration
 BEAM_ACTIVE_DECAY = 0.008     # Seconds lost per second of survival
 
 # Beam type unlock times (seconds of survival)
-UNLOCK_VERTICAL = 10.0
-UNLOCK_HEAD_HUNTER = 20.0     # Forces ducking
-UNLOCK_CROSS = 25.0
+UNLOCK_VERTICAL = 15.0
+UNLOCK_HEAD_HUNTER = 30.0     # Forces ducking
+UNLOCK_CROSS = 40.0
 
 # ─── Head Hunter (duck beam) ─────────────────────────────────────
 HEAD_HUNTER_HEIGHT = 0.40     # Fraction of screen from top (solid, no gap)
@@ -116,7 +116,7 @@ BODY_GLOW_INTENSITY = 0.6      # Blend weight of glow layer
 
 # Collision forgiveness: erode body mask before collision check
 # Makes the hitbox slightly smaller than the visual silhouette.
-COLLISION_ERODE_PX = 5
+COLLISION_ERODE_PX = 8
 
 # ─── Lives & Invincibility ────────────────────────────────────────
 STARTING_LIVES = 5

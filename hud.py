@@ -52,6 +52,8 @@ class HUD:
 
         if state == State.IDLE:
             self._render_idle(surface, leaderboard_scores)
+        elif state == State.INSTRUCTIONS:
+            self._render_instructions(surface)
         elif state == State.COUNTDOWN:
             self._render_countdown(surface, game_state)
         elif state in (State.PLAYING, State.HIT):
@@ -97,6 +99,62 @@ class HUD:
 
         # Leaderboard
         self._render_leaderboard_full(surface, leaderboard_scores)
+
+        # Branding
+        self._draw_text(
+            surface, "SUTD 3DC  |  Open House 2026",
+            self.font_small, (80, 80, 80),
+            x=self.width // 2, y=self.height - 25,
+            center_x=True
+        )
+
+    # ────────────────────────────────────────────────────────────
+    # INSTRUCTIONS (How to Play)
+    # ────────────────────────────────────────────────────────────
+
+    def _render_instructions(self, surface):
+        """How-to-play screen shown after body is detected, before countdown."""
+        # Semi-transparent overlay for readability
+        dark = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        dark.fill((0, 0, 0, 140))
+        surface.blit(dark, (0, 0))
+
+        # Title
+        self._draw_text_centered(
+            surface, "HOW TO PLAY",
+            self.font_large, cfg.COLOR_IDLE_TEXT,
+            y=self.height // 2 - 140
+        )
+
+        # Instructions
+        instructions = [
+            "Move your body to DODGE the laser beams",
+            "Find the GREEN safe zones to survive",
+            "Duck under PURPLE head-hunter beams",
+            "Don't stand still or you'll be targeted!",
+        ]
+        for i, line in enumerate(instructions):
+            self._draw_text_centered(
+                surface, line,
+                self.font_small, cfg.COLOR_HUD_TEXT,
+                y=self.height // 2 - 70 + i * 28
+            )
+
+        # Lives info
+        self._draw_text_centered(
+            surface, f"You have {cfg.STARTING_LIVES} lives. Survive as long as you can!",
+            self.font_small, (0, 200, 83),
+            y=self.height // 2 + 55
+        )
+
+        # Pulsing "Press ENTER to start" prompt
+        pulse = (math.sin(time.time() * 3.0) + 1) / 2
+        alpha = int(120 + pulse * 135)
+        self._draw_text_centered(
+            surface, "Press ENTER to start",
+            self.font_medium, cfg.COLOR_HIGHSCORE,
+            y=self.height // 2 + 110, alpha=alpha
+        )
 
         # Branding
         self._draw_text(

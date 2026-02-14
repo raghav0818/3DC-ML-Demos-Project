@@ -16,12 +16,13 @@ import config as cfg
 
 
 class State(Enum):
-    IDLE = auto()       # Attract screen, waiting for a player
-    COUNTDOWN = auto()  # 3-2-1 before gameplay starts
-    PLAYING = auto()    # Active gameplay
-    HIT = auto()        # Brief invincibility after collision
-    GAME_OVER = auto()  # Score display, then fade to IDLE
-    PAUSED = auto()     # Operator pause
+    IDLE = auto()           # Attract screen, waiting for a player
+    INSTRUCTIONS = auto()   # How-to-play screen, waiting for Enter
+    COUNTDOWN = auto()      # 3-2-1 before gameplay starts
+    PLAYING = auto()        # Active gameplay
+    HIT = auto()            # Brief invincibility after collision
+    GAME_OVER = auto()      # Score display, then fade to IDLE
+    PAUSED = auto()         # Operator pause
 
 
 class GameState:
@@ -141,7 +142,17 @@ class GameState:
         if self.state == State.IDLE:
             # Waiting for a player to step into frame
             if body_detected:
-                self._start_countdown()
+                self._enter(State.INSTRUCTIONS)
+
+        elif self.state == State.INSTRUCTIONS:
+            # Waiting for the player to press Enter after reading instructions.
+            # If body disappears, go back to idle.
+            if not body_detected:
+                self._body_lost_frames += 1
+                if self._body_lost_frames > cfg.BODY_LOST_HINT_FRAMES:
+                    self._enter(State.IDLE)
+            else:
+                self._body_lost_frames = 0
 
         elif self.state == State.COUNTDOWN:
             # Counting down 3-2-1
@@ -209,6 +220,11 @@ class GameState:
         else:
             self._enter(State.HIT)
             return True
+
+    def start_game(self):
+        """Called when the player presses Enter on the instructions screen."""
+        if self.state == State.INSTRUCTIONS:
+            self._start_countdown()
 
     def toggle_pause(self):
         """Operator presses P to toggle pause."""
