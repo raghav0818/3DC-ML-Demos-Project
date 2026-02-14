@@ -28,14 +28,15 @@ def send_to_leaderboard_server(player, timing, category):
     Args:
         player:   Player name / identifier.
         timing:   Survival time in seconds (float).
-        category: Difficulty category string (e.g. "EASY", "HARD").
+        category: Difficulty tier string (e.g. "EASY", "HARD").
+                  Sent to server as "laserdodge_easy", "laserdodge_hard", etc.
     """
     def _put():
         try:
             payload = {
                 "player": player,
                 "timing": timing,
-                "category": category, #laserdodge_easy, laserdodge_medium
+                "category": f"laserdodge_{category.lower()}",
             }
             resp = requests.put(LEADERBOARD_SERVER_URL, json=payload, timeout=5)
             print(f"[Leaderboard] Server response: {resp.status_code}")
