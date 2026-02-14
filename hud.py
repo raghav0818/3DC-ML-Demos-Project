@@ -52,6 +52,8 @@ class HUD:
 
         if state == State.IDLE:
             self._render_idle(surface, leaderboard_scores)
+        elif state == State.INSTRUCTIONS:
+            self._render_instructions(surface)
         elif state == State.COUNTDOWN:
             self._render_countdown(surface, game_state)
         elif state in (State.PLAYING, State.HIT):
@@ -97,6 +99,62 @@ class HUD:
 
         # Leaderboard
         self._render_leaderboard_full(surface, leaderboard_scores)
+
+        # Branding
+        self._draw_text(
+            surface, "SUTD 3DC  |  Open House 2026",
+            self.font_small, (80, 80, 80),
+            x=self.width // 2, y=self.height - 25,
+            center_x=True
+        )
+
+    # ────────────────────────────────────────────────────────────
+    # INSTRUCTIONS (How to Play)
+    # ────────────────────────────────────────────────────────────
+
+    def _render_instructions(self, surface):
+        """How-to-play screen shown after body is detected, before countdown."""
+        # Semi-transparent overlay for readability
+        dark = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        dark.fill((0, 0, 0, 140))
+        surface.blit(dark, (0, 0))
+
+        # Title
+        self._draw_text_centered(
+            surface, "HOW TO PLAY",
+            self.font_large, cfg.COLOR_IDLE_TEXT,
+            y=self.height // 2 - 140
+        )
+
+        # Instructions
+        instructions = [
+            "Move your body to DODGE the laser beams",
+            "Find the GREEN safe zones to survive",
+            "Duck under PURPLE head-hunter beams",
+            "Don't stand still or you'll be targeted!",
+        ]
+        for i, line in enumerate(instructions):
+            self._draw_text_centered(
+                surface, line,
+                self.font_small, cfg.COLOR_HUD_TEXT,
+                y=self.height // 2 - 70 + i * 28
+            )
+
+        # Lives info
+        self._draw_text_centered(
+            surface, f"You have {cfg.STARTING_LIVES} lives. Survive as long as you can!",
+            self.font_small, (0, 200, 83),
+            y=self.height // 2 + 55
+        )
+
+        # Pulsing "Press ENTER to start" prompt
+        pulse = (math.sin(time.time() * 3.0) + 1) / 2
+        alpha = int(120 + pulse * 135)
+        self._draw_text_centered(
+            surface, "Press ENTER to start",
+            self.font_medium, cfg.COLOR_HIGHSCORE,
+            y=self.height // 2 + 110, alpha=alpha
+        )
 
         # Branding
         self._draw_text(
@@ -168,6 +226,16 @@ class HUD:
         # ── Mini leaderboard (bottom right, top 3 only) ──
         self._render_leaderboard_mini(surface, leaderboard_scores)
 
+        # ── Gameplay instruction (first few seconds) ──
+        T = game_state.survival_time
+        if T < 8.0:
+            inst_alpha = 255 if T < 5.0 else int(255 * (1.0 - (T - 5.0) / 3.0))
+            self._draw_text_centered(
+                surface, "MOVE TO THE GREEN ZONES",
+                self.font_medium, (0, 255, 100),
+                y=self.height - 55, alpha=inst_alpha
+            )
+
         # ── Hit flash overlay ──
         if game_state.state == State.HIT:
             flash_progress = game_state.time_in_state / cfg.HIT_FLASH_DURATION
@@ -228,6 +296,8 @@ class HUD:
                 self.font_medium, color,
                 y=self.height // 2 + 10
             )
+
+
 
         # New high score celebration text
         if game_state.is_new_highscore:
@@ -299,6 +369,48 @@ class HUD:
                 color = (120, 120, 120)
             self._draw_text(surface, text, self.font_small, color,
                             x=self.width // 2, y=y + i * 20, center_x=True)
+
+    # ────────────────────────────────────────────────────────────
+    # Body-lost hint
+    # ────────────────────────────────────────────────────────────
+
+    # ────────────────────────────────────────────────────────────
+    # Anti-camping reticle
+    # ────────────────────────────────────────────────────────────
+
+    def render_camp_warning(self, surface, target_x, target_y):
+        """Draw a targeting reticle + 'MOVE!' on the camper's position."""
+        now = time.time()
+        pulse = abs(math.sin(now * 6))
+        alpha = int(150 + pulse * 105)
+        color = (255, 0, 0, alpha)
+
+        reticle_surf = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
+        size = 30
+        thickness = 2
+        # Crosshair lines
+        pygame.draw.line(reticle_surf, color,
+                         (target_x - size, target_y),
+                         (target_x + size, target_y), thickness)
+        pygame.draw.line(reticle_surf, color,
+                         (target_x, target_y - size),
+                         (target_x, target_y + size), thickness)
+        # Outer circle
+        pygame.draw.circle(reticle_surf, color, (target_x, target_y),
+                           size, thickness)
+        # Inner circle
+        pygame.draw.circle(reticle_surf, color, (target_x, target_y),
+                           size // 2, thickness)
+
+        surface.blit(reticle_surf, (0, 0))
+
+        # "MOVE!" text above the reticle
+        self._draw_text_centered(
+            surface, "MOVE!",
+            self.font_medium, (255, 0, 0),
+            y=max(0, target_y - 55), alpha=alpha
+        )
 
     # ────────────────────────────────────────────────────────────
     # Body-lost hint

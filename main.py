@@ -36,7 +36,7 @@ from laser import LaserManager
 from particles import ParticleSystem
 from player import PlayerRenderer
 from hud import HUD
-from leaderboard import Leaderboard
+from leaderboard import Leaderboard, send_to_leaderboard_server
 
 
 def main():
@@ -54,13 +54,20 @@ def main():
     # logic and collision detection at a fixed, predictable resolution.
 
     if cfg.FULLSCREEN:
+        # Use the native monitor resolution so the game fills the screen
+        # regardless of the user's display (1080p, 1440p, 4K, etc.).
+        screen_info = pygame.display.Info()
+        display_w = screen_info.current_w
+        display_h = screen_info.current_h
         display = pygame.display.set_mode(
-            (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+            (display_w, display_h),
             pygame.FULLSCREEN | pygame.HWSURFACE | pygame.DOUBLEBUF,
         )
     else:
+        display_w = cfg.DISPLAY_WIDTH
+        display_h = cfg.DISPLAY_HEIGHT
         display = pygame.display.set_mode(
-            (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+            (display_w, display_h),
             pygame.HWSURFACE | pygame.DOUBLEBUF,
         )
 
@@ -146,6 +153,11 @@ def main():
                     game_state.forced_difficulty = None
                     print("[Debug] Difficulty set to auto.")
 
+                elif event.key == pygame.K_RETURN:
+                    # Start the game from the instructions screen
+                    game_state.start_game()
+                    _play_sound(sounds, "beep")
+
         # Don't update anything while paused
         if game_state.state == State.PAUSED:
             game_surface.fill(cfg.COLOR_BACKGROUND)
@@ -160,6 +172,16 @@ def main():
         body_mask, body_detected = camera.get_body_mask()
         collision_mask = camera.get_collision_mask()
 
+        # ── Compute body centroid for anti-camping ──
+        if body_detected:
+            ys_b, xs_b = np.where(body_mask > 0)
+            if len(xs_b) > 0:
+                game_state.update_centroid(int(np.mean(xs_b)), int(np.mean(ys_b)))
+            else:
+                game_state.update_centroid(None, None)
+        else:
+            game_state.update_centroid(None, None)
+
         # ────────────────────────────────────────────────────────
         # STEP 2: Update game state machine
         # ────────────────────────────────────────────────────────
@@ -169,7 +191,7 @@ def main():
         # ── State transition side-effects ──
 
         # Entering COUNTDOWN → reset lasers and particles
-        if game_state.state == State.COUNTDOWN and prev_state == State.IDLE:
+        if game_state.state == State.COUNTDOWN and prev_state == State.INSTRUCTIONS:
             laser_mgr.reset()
             particles.clear()
             _play_sound(sounds, "beep")
@@ -178,28 +200,16 @@ def main():
         if game_state.state == State.PLAYING and prev_state == State.COUNTDOWN:
             _play_sound(sounds, "start")
 
-        # Entering GAME_OVER → submit score, spawn celebration particles
-        if game_state.state == State.GAME_OVER and prev_state in (State.PLAYING, State.HIT):
-            rank, is_highscore = leaderboard.submit(game_state.final_time)
-            game_state.set_game_over_result(rank, is_highscore)
-            _play_sound(sounds, "gameover")
-
-            if is_highscore:
-                _play_sound(sounds, "highscore")
-                # Celebration particles from center of screen
-                particles.emit(
-                    cfg.INTERNAL_WIDTH // 2,
-                    cfg.INTERNAL_HEIGHT // 2,
-                    cfg.PARTICLES_ON_HIGHSCORE,
-                    cfg.COLOR_HIGHSCORE,
-                    speed_min=3.0, speed_max=12.0,
-                )
-
         # ────────────────────────────────────────────────────────
         # STEP 3 & 4: Spawn and update lasers
         # ────────────────────────────────────────────────────────
         if game_state.state in (State.PLAYING, State.HIT):
             laser_mgr.update(dt, game_state.survival_time)
+
+            # Anti-camping: fire targeted laser if camper didn't move
+            camp_target = game_state.consume_camp_laser()
+            if camp_target is not None:
+                laser_mgr.spawn_anti_camp_laser(camp_target, game_state.survival_time)
 
         # ────────────────────────────────────────────────────────
         # STEP 5: Collision detection
@@ -219,6 +229,28 @@ def main():
                         hit_color or cfg.COLOR_HIT_FLASH,
                     )
 
+        # ── GAME_OVER transition side-effects ──
+        # Checked here (after collision) so we catch game overs triggered
+        # by both body-lost (in update()) AND collision (in register_hit()).
+        if game_state.state == State.GAME_OVER and prev_state in (State.PLAYING, State.HIT):
+            rank, is_highscore = leaderboard.submit(game_state.final_time)
+            game_state.set_game_over_result(rank, is_highscore)
+            # Send score to the central leaderboard server (non-blocking)
+            tier_name, _ = game_state.difficulty_tier
+            send_to_leaderboard_server("Anonymous", game_state.final_time, tier_name)
+            _play_sound(sounds, "gameover")
+
+            if is_highscore:
+                _play_sound(sounds, "highscore")
+                # Celebration particles from center of screen
+                particles.emit(
+                    cfg.INTERNAL_WIDTH // 2,
+                    cfg.INTERNAL_HEIGHT // 2,
+                    cfg.PARTICLES_ON_HIGHSCORE,
+                    cfg.COLOR_HIGHSCORE,
+                    speed_min=3.0, speed_max=12.0,
+                )
+
         # ────────────────────────────────────────────────────────
         # STEP 6: Update particle systems
         # ────────────────────────────────────────────────────────
@@ -236,7 +268,7 @@ def main():
             laser_mgr.render(game_surface)
 
         # 7c. Draw the player's neon body silhouette
-        if body_detected and game_state.state in (State.COUNTDOWN, State.PLAYING, State.HIT):
+        if body_detected and game_state.state in (State.INSTRUCTIONS, State.COUNTDOWN, State.PLAYING, State.HIT):
             body_surface = player_renderer.render_body(
                 body_mask,
                 is_invincible=game_state.is_invincible,
@@ -250,6 +282,12 @@ def main():
             body_surface = player_renderer.render_body(body_mask, time_now=now)
             body_surface.set_alpha(80)
             game_surface.blit(body_surface, (0, 0))
+
+        # 7c2. Draw anti-camping reticle (on top of lasers, below body)
+        if game_state.camp_warning_active and game_state.state in (State.PLAYING, State.HIT):
+            hud.render_camp_warning(game_surface,
+                                    game_state.camp_target_x,
+                                    game_state.camp_target_y)
 
         # 7d. Draw particles (on top of everything except HUD)
         particles.render(game_surface)
@@ -294,12 +332,12 @@ def main():
 def _scale_and_flip(game_surface, display):
     """
     Scale the internal-resolution game surface up to the display
-    resolution and present it.  Uses pygame.transform.scale which
-    is hardware-accelerated on most systems.
+    resolution and present it.  Uses smoothscale for bilinear
+    filtering so the upscaled image isn't blocky/grainy.
     """
-    scaled = pygame.transform.scale(
+    scaled = pygame.transform.smoothscale(
         game_surface,
-        (cfg.DISPLAY_WIDTH, cfg.DISPLAY_HEIGHT),
+        display.get_size(),
     )
     display.blit(scaled, (0, 0))
     pygame.display.flip()

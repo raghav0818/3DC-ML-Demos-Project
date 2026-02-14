@@ -1,0 +1,3 @@
+- need to fix the leaderboard naming and change the category to leaderboard_easy, etc. 
+so that owen can change the backend
+

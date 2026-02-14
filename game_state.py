@@ -16,12 +16,13 @@ import config as cfg
 
 
 class State(Enum):
-    IDLE = auto()       # Attract screen, waiting for a player
-    COUNTDOWN = auto()  # 3-2-1 before gameplay starts
-    PLAYING = auto()    # Active gameplay
-    HIT = auto()        # Brief invincibility after collision
-    GAME_OVER = auto()  # Score display, then fade to IDLE
-    PAUSED = auto()     # Operator pause
+    IDLE = auto()           # Attract screen, waiting for a player
+    INSTRUCTIONS = auto()   # How-to-play screen, waiting for Enter
+    COUNTDOWN = auto()      # 3-2-1 before gameplay starts
+    PLAYING = auto()        # Active gameplay
+    HIT = auto()            # Brief invincibility after collision
+    GAME_OVER = auto()      # Score display, then fade to IDLE
+    PAUSED = auto()         # Operator pause
 
 
 class GameState:
@@ -59,6 +60,14 @@ class GameState:
 
         # Force-difficulty override (keys 1-4 for operator)
         self.forced_difficulty = None      # None = auto, 1-4 = forced tier
+
+        # ── Anti-camping centroid tracking ──
+        self._centroid_x = None           # Smoothed centroid X
+        self._centroid_y = None           # Smoothed centroid Y
+        self._camp_start_time = None      # When the player started staying still
+        self.camp_warning_active = False  # True when reticle should be shown
+        self.camp_target_x = 0           # X position for the reticle / laser
+        self.camp_target_y = 0           # Y position for the reticle
 
     # ────────────────────────────────────────────────────────────
     # Properties
@@ -133,7 +142,17 @@ class GameState:
         if self.state == State.IDLE:
             # Waiting for a player to step into frame
             if body_detected:
-                self._start_countdown()
+                self._enter(State.INSTRUCTIONS)
+
+        elif self.state == State.INSTRUCTIONS:
+            # Waiting for the player to press Enter after reading instructions.
+            # If body disappears, go back to idle.
+            if not body_detected:
+                self._body_lost_frames += 1
+                if self._body_lost_frames > cfg.BODY_LOST_HINT_FRAMES:
+                    self._enter(State.IDLE)
+            else:
+                self._body_lost_frames = 0
 
         elif self.state == State.COUNTDOWN:
             # Counting down 3-2-1
@@ -202,6 +221,11 @@ class GameState:
             self._enter(State.HIT)
             return True
 
+    def start_game(self):
+        """Called when the player presses Enter on the instructions screen."""
+        if self.state == State.INSTRUCTIONS:
+            self._start_countdown()
+
     def toggle_pause(self):
         """Operator presses P to toggle pause."""
         if self.state == State.PAUSED:
@@ -221,6 +245,86 @@ class GameState:
         self.is_new_highscore = is_highscore
 
     # ────────────────────────────────────────────────────────────
+    # Anti-camping centroid tracking
+    # ────────────────────────────────────────────────────────────
+
+    def update_centroid(self, cx, cy):
+        """
+        Update the player's centroid and detect camping.
+
+        Called every frame from main.py with the body mask centroid.
+        Pass (None, None) when no body is detected.
+        """
+        if self.state not in (State.PLAYING, State.HIT):
+            self._reset_camping()
+            return
+
+        if cx is None or cy is None:
+            return
+
+        # First frame: just store the initial position
+        if self._centroid_x is None:
+            self._centroid_x = float(cx)
+            self._centroid_y = float(cy)
+            return
+
+        # Check movement distance from the smoothed reference
+        dx = cx - self._centroid_x
+        dy = cy - self._centroid_y
+        distance = (dx * dx + dy * dy) ** 0.5
+
+        if distance > cfg.CAMPING_THRESHOLD:
+            # Player moved enough — reset camping
+            self._centroid_x = float(cx)
+            self._centroid_y = float(cy)
+            self._camp_start_time = None
+            self.camp_warning_active = False
+        else:
+            # Player is stationary — start/continue camp timer
+            now = time.time()
+            if self._camp_start_time is None:
+                self._camp_start_time = now
+
+            camp_duration = now - self._camp_start_time
+            if camp_duration >= cfg.CAMPING_TIME:
+                self.camp_warning_active = True
+                self.camp_target_x = int(self._centroid_x)
+                self.camp_target_y = int(self._centroid_y)
+
+            # Smooth the reference to handle body segmentation noise
+            self._centroid_x = self._centroid_x * 0.95 + cx * 0.05
+            self._centroid_y = self._centroid_y * 0.95 + cy * 0.05
+
+    def consume_camp_laser(self):
+        """
+        Check if the anti-camp laser should fire.
+
+        Returns the target X coordinate when it's time to fire,
+        or None if not yet. Resets camping state after firing
+        so the detection cycle starts fresh.
+        """
+        if not self.camp_warning_active or self._camp_start_time is None:
+            return None
+
+        now = time.time()
+        total_camp = now - self._camp_start_time
+        if total_camp >= cfg.CAMPING_TIME + cfg.CAMPING_WARNING_TIME:
+            target_x = self.camp_target_x
+            # Reset so the cycle can trigger again
+            self._camp_start_time = None
+            self.camp_warning_active = False
+            return target_x
+
+        return None
+
+    def _reset_camping(self):
+        """Clear all camping tracking state."""
+        self._centroid_x = None
+        self._centroid_y = None
+        self._camp_start_time = None
+        self.camp_warning_active = False
+
+    # ────────────────────────────────────────────────────────────
     # Internal helpers
     # ────────────────────────────────────────────────────────────
 
@@ -235,6 +339,7 @@ class GameState:
         self._body_lost_since = None
         self._body_lost_frames = 0
         self.forced_difficulty = None
+        self._reset_camping()
         self._enter(State.COUNTDOWN)
 
     def _start_playing(self):

@@ -38,6 +38,8 @@ COLOR_LASER_VERTICAL = (255, 0, 110)    # Hot magenta
 COLOR_LASER_CROSS_H = (0, 212, 255)     # Cyan (horizontal part)
 COLOR_LASER_CROSS_V = (255, 0, 110)     # Magenta (vertical part)
 COLOR_LASER_SWEEP = (255, 214, 0)       # Gold
+COLOR_LASER_HEAD_HUNTER = (170, 0, 255)     # Purple
+COLOR_LASER_ANTI_CAMP = (255, 30, 30)       # Bright red
 COLOR_HIT_FLASH = (255, 0, 0)           # Red
 COLOR_HUD_TEXT = (255, 255, 255)        # White
 COLOR_HUD_SHADOW = (0, 0, 0)           # Black shadow behind text
@@ -54,35 +56,47 @@ COLOR_TIER_INSANE = (213, 0, 0)        # Red
 
 # ─── Difficulty Curve ──────────────────────────────────────────────
 # All values are functions of T (survival time in seconds).
-# beam_speed = BASE_SPEED + (T / 60) * SPEED_RAMP, capped at MAX_SPEED
-BEAM_BASE_SPEED = 4.0
-BEAM_SPEED_RAMP = 6.0         # Additional speed gained over 60 seconds
-BEAM_MAX_SPEED = 14.0
-
 # spawn_interval = max(MIN_INTERVAL, BASE_INTERVAL - T * INTERVAL_DECAY)
 SPAWN_BASE_INTERVAL = 3.0     # Seconds between beams at T=0
-SPAWN_MIN_INTERVAL = 0.8      # Fastest spawn rate
-SPAWN_INTERVAL_DECAY = 0.0183 # Rate of interval decrease per second
+SPAWN_MIN_INTERVAL = 1.2      # Fastest spawn rate
+SPAWN_INTERVAL_DECAY = 0.015  # Rate of interval decrease per second
 
 # gap_size = max(MIN_GAP, BASE_GAP - T * GAP_SHRINK)
 # Expressed as fraction of screen dimension (0.0 to 1.0)
-GAP_BASE_SIZE = 0.40
-GAP_MIN_SIZE = 0.15
+GAP_BASE_SIZE = 0.50
+GAP_MIN_SIZE = 0.30
 GAP_SHRINK_RATE = 0.002
 
+# Minimum pixel distance between consecutive laser positions.
+# Prevents lasers from stacking on top of each other.
+LASER_MIN_SPACING = 100
+
 # warning_time = max(MIN_WARNING, BASE_WARNING - T * WARNING_DECAY)
-WARNING_BASE_MS = 1200         # Milliseconds of warning at T=0
-WARNING_MIN_MS = 300
+# During warning the beam position and safe gap are previewed on screen.
+WARNING_BASE_MS = 1500         # Milliseconds of warning at T=0
+WARNING_MIN_MS = 600
 WARNING_DECAY = 7.5            # ms reduction per second of survival
+
+# beam_active = max(MIN_ACTIVE, BASE_ACTIVE - T * ACTIVE_DECAY)
+# How long the beam stays on screen (dangerous) after the warning ends.
+BEAM_ACTIVE_BASE = 1.8        # Seconds at T=0
+BEAM_ACTIVE_MIN = 0.7         # Minimum active duration
+BEAM_ACTIVE_DECAY = 0.008     # Seconds lost per second of survival
 
 # Beam type unlock times (seconds of survival)
 UNLOCK_VERTICAL = 15.0
-UNLOCK_CROSS = 30.0
-UNLOCK_SWEEP = 45.0
+UNLOCK_HEAD_HUNTER = 30.0     # Forces ducking
+UNLOCK_CROSS = 40.0
 
-# Sweep beam specific
-SWEEP_BEAM_WIDTH = 12          # Pixels (thinner than regular beams)
-SWEEP_SPEED_MULTIPLIER = 0.3   # Fraction of normal beam speed (slower)
+# ─── Head Hunter (duck beam) ─────────────────────────────────────
+HEAD_HUNTER_HEIGHT = 0.40     # Fraction of screen from top (solid, no gap)
+
+# ─── Anti-Camping ────────────────────────────────────────────────
+CAMPING_THRESHOLD = 25        # Pixel movement to reset camp timer
+CAMPING_TIME = 2.5            # Seconds stationary before warning reticle appears
+CAMPING_WARNING_TIME = 1.5    # Seconds of warning before anti-camp laser fires
+ANTI_CAMP_WARNING_MS = 500    # Short beam warning (player already sees reticle)
+ANTI_CAMP_ACTIVE_DURATION = 1.5  # How long the anti-camp beam stays active
 
 # ─── Beam Rendering ───────────────────────────────────────────────
 BEAM_CORE_WIDTH = 24           # Core beam width in pixels
@@ -102,10 +116,10 @@ BODY_GLOW_INTENSITY = 0.6      # Blend weight of glow layer
 
 # Collision forgiveness: erode body mask before collision check
 # Makes the hitbox slightly smaller than the visual silhouette.
-COLLISION_ERODE_PX = 5
+COLLISION_ERODE_PX = 8
 
 # ─── Lives & Invincibility ────────────────────────────────────────
-STARTING_LIVES = 3
+STARTING_LIVES = 5
 INVINCIBILITY_DURATION = 1.0   # Seconds of invincibility after a hit
 INVINCIBILITY_FLASH_HZ = 8    # Flash frequency during invincibility
 
